@@ -71,11 +71,19 @@
 					      <td><%= data[i].transAddress %></td>
 					      <td><%= data[i].transMOP %></td>
 					      <td><button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal" onclick="retrieveData(<%= JSON.stringify(data[i].transID)  %>)">
-									View order
+									View orders
 								  </button></td>
-								<td><button type="button" class="btn btn-success" onclick="deliverOrder(<%= JSON.stringify(data[i].transID)  %>)" <%= data[i].transStatus!="pending" ? 'disabled' : '' %> >
+								<td><button type="button" class="btn btn-secondary" style="width: 100%;" onclick="deliverOrder(<%= JSON.stringify(data[i].transID)  %>,'del')" <%= data[i].transStatus=="approved" ? '' : 'disabled' %> >
 									Deliver
-								  </button></td>
+								  </button>
+								  <button type="button" class="btn btn-success" style="width: 100%; margin-top: 1em;" onclick="deliverOrder(<%= JSON.stringify(data[i].transID)  %>,'approved')" <%= data[i].transStatus=="pending" ? '' : 'disabled' %> >
+									Accept
+								  </button>
+								  <button type="button" class="btn btn-danger" style="width: 100%; margin-top: 1em;" onclick="deliverOrder(<%= JSON.stringify(data[i].transID)  %>, 'declined')" <%= data[i].transStatus=="pending" ? '' : 'disabled' %> >
+									Decliner
+								  </button>
+								</td>
+
 				    	</tr>
 				    <% } %>
 					</tbody>
@@ -91,12 +99,12 @@
 
 <script>
 	
-	function deliverOrder(data) {
+	function deliverOrder(data,type) {
 		$.ajax({
 			type: "POST",
 			url: "/deliveritem",
 			dataType: "JSON",
-			data: {data:data},
+			data: {data:data, type: type},
 			success: ()=>{
 				location.reload(true);
 			}
