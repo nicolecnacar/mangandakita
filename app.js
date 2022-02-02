@@ -5,6 +5,7 @@ var app = express();
 const path = require('path');
 var cookieParser = require('cookie-parser');
 var session = require('express-session');
+var uuid = require('uuid');
   
 app.use(bodyParser.urlencoded({ extended: false }))
 
@@ -17,17 +18,17 @@ app.use(express.static(path.join(__dirname,'/public')));
 app.use(cookieParser());
 app.use(session({secret: "Shh, its a secret!",saveUninitialized:true, resave: false}));
 
-// const db  = mysql.createConnection({
-//     host            : 'localhost',
-//     user            : 'root',
-//     password        : '08019899',
-//     database        : 'mangandakita'
-// })
+const db  = mysql.createConnection({
+    host            : 'localhost',
+    user            : 'root',
+    password        : '08019899',
+    database        : 'mangandakita'
+})
 
-// db.connect((err)=>{
-//     if(err) throw err
-//     console.log("Connected to db")
-// })
+db.connect((err)=>{
+    if(err) throw err
+    console.log("Connected to db")
+})
 
 app.get('/',(req,res) => {
     res.render("home")
@@ -45,11 +46,14 @@ app.all('/admin',(req,res) => {
             if(err) throw err;
 
             if(results.length==0){
+
                 res.render("admin",{error:true})
             }
 
             else if(results.length>0){
-                res.redirect("adminDashboard")
+                var session = req.session
+                session.userid = {id:results[0].userID};
+                res.redirect("/viewOrders")
             }
         })
 
@@ -59,9 +63,6 @@ app.all('/admin',(req,res) => {
 
 });
 
-app.all('/adminDashboard',(req,res) => {
-    res.render("adminDashboard")
-});
 
 app.get('/techStack',(req,res) => {
     res.render("tech")
@@ -126,7 +127,9 @@ app.all('/guestLogin',(req,res) => {
             }
 
             else if(results.length>0){
-                res.redirect("guestDashboard")
+                var session = req.session
+                session.userid = {id:results[0].userID};
+                res.redirect("/orderForm")
             }
         })
 
@@ -150,17 +153,13 @@ app.all('/guestSignUp',(req,res) => {
                 if(err1) throw err1
                 var session = req.session
                 session.userid = {id:result1[0].id};
-                res.redirect("/guestDashboard")
+                res.redirect("/orderForm")
             })
         })
 
     } else {
         res.render("guestSignUp")
     }
-});
-
-app.all('/guestDashboard',(req,res) => {
-    res.render("guestDashboard")
 });
 
 app.all('/guestMenu',(req,res) => {
@@ -183,6 +182,7 @@ app.all('/menu',(req,res) => {
 
 app.all('/orderForm',(req,res) => {
 
+    if (req.session.userid!=null) {
     const sql = `SELECT * FROM products`
 
     db.query(sql, (err,results)=>{
@@ -191,8 +191,77 @@ app.all('/orderForm',(req,res) => {
 
         res.render("orderForm", {data:results})
             
-    })
+    })}
+
+    else{
+        res.redirect("/guestLogin")
+    }
 });
+
+app.post('/addorder',(req,res) => {
+
+    const params = JSON.parse(req.body.data)
+    const add = req.body.address
+    const mop = req.body.mop
+    const transaction_id = uuid.v4()
+    console.log(req.session.userid.id)
+    for (var i = 0; i < params.length; i++) {
+        db.query(`INSERT INTO transaction (transUID, transprodID, transQty, transID, transAddress, transMOP) VALUES (${req.session.userid.id}, ${params[i].id}, ${params[i].quantity}, "${transaction_id}", "${add}", "${mop}" )`)
+    }
+
+    res.send(true)
+    
+});
+
+app.get('/viewOrders',(req,res)=>{
+
+    if (req.session.userid!=null) {
+        db.query(`SELECT tf.transStatus, us.userUname, tf.transDate, tf.transID, SUM(tf.transQty*pr.prodPrice) as total, tf.transAddress, tf.transMOP FROM transaction AS tf INNER JOIN users as us ON tf.transUID = us.userID INNER JOIN products as pr ON tf.transprodID = pr.prodID
+    GROUP BY transID
+    ORDER BY tf.transDate ASC `,(err, result)=>{
+        res.render("adminDashboard", {data:result})
+    })
+
+    }
+
+    else{
+        res.redirect("/admin")
+    }
+})
+
+app.post('/retrieveOrder', (req,res)=>{
+
+    const transaction_id = req.body.data
+    db.query(`SELECT tf.id, pr.prodName, pr.prodPrice,tf.transQty, (tf.transQty*pr.prodPrice) as total
+    FROM transaction as tf
+    INNER JOIN users as us ON tf.transUID = us.userID
+    INNER JOIN products as pr ON tf.transprodID = pr.prodID
+    WHERE tf.transID = "${transaction_id}"
+    ORDER BY pr.prodName ASC `,(err, result)=>{
+        console.log(result)
+        res.send(result)
+    })
+
+})
+
+app.get('/viewPurchases',(req,res) => {
+
+    if (req.session.userid!=null) {
+        db.query(`SELECT tf.transStatus, us.userUname, tf.transDate, tf.transID, SUM(tf.transQty*pr.prodPrice) as total, tf.transAddress, tf.transMOP FROM transaction AS tf INNER JOIN users as us ON tf.transUID = us.userID INNER JOIN products as pr ON tf.transprodID = pr.prodID
+            WHERE us.userID = "${req.session.userid.id}"
+    GROUP BY transID
+    ORDER BY tf.transDate ASC `,(err, result)=>{
+        res.render("viewOrders", {data:result})
+    })
+
+    }
+
+    else{
+        res.redirect("/guestLogin")
+    }
+
+});
+
 
 app.listen(process.env.PORT||3000)
 

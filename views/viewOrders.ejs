@@ -38,10 +38,10 @@
 				    <div class="collapse navbar-collapse" id="navbarNav">
 				      <ul class="navbar-nav">
 				        <li class="nav-item">
-				          <a class="nav-link" href="/adminDashboard">View Order</a>
+				          <a class="nav-link" href="/orderForm">Order Form</a>
 				        </li>
 				        <li class="nav-item">
-				          <a class="nav-link" href="/approval">Account Approval</a>
+				          <a class="nav-link" href="#">View Orders</a>
 				        </li>
 				      </ul>
 				    </div>
@@ -58,7 +58,6 @@
 							<th scope="col">Address</th>
 							<th scope="col">Mode of Payment</th>
 							<th scope="col">Order Items</th>
-							<th scope="col">Option</th>
 						</tr>
 					</thead>
 					<tbody>
@@ -72,9 +71,6 @@
 					      <td><%= data[i].transMOP %></td>
 					      <td><button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal" onclick="retrieveData(<%= JSON.stringify(data[i].transID)  %>)">
 									View order
-								  </button></td>
-								<td><button type="button" class="btn btn-success" onclick="deliverOrder(<%= JSON.stringify(data[i].transID)  %>)" <%= data[i].transStatus!="pending" ? 'disabled' : '' %> >
-									Deliver
 								  </button></td>
 				    	</tr>
 				    <% } %>
