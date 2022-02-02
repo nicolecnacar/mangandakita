@@ -18,17 +18,17 @@ app.use(express.static(path.join(__dirname,'/public')));
 app.use(cookieParser());
 app.use(session({secret: "Shh, its a secret!",saveUninitialized:true, resave: false}));
 
-const db  = mysql.createConnection({
-    host            : 'localhost',
-    user            : 'root',
-    password        : '08019899',
-    database        : 'mangandakita'
-})
+// const db  = mysql.createConnection({
+//     host            : 'localhost',
+//     user            : 'root',
+//     password        : '08019899',
+//     database        : 'mangandakita'
+// })
 
-db.connect((err)=>{
-    if(err) throw err
-    console.log("Connected to db")
-})
+// db.connect((err)=>{
+//     if(err) throw err
+//     console.log("Connected to db")
+// })
 
 app.get('/',(req,res) => {
     res.render("home")
